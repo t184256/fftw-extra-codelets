@@ -1,0 +1,9 @@
+# FFTW version
+FFTW=fftw-3.3.7
+
+# Extra codelets
+O00_UP_TO=40
+
+# Compilation flags
+FLAGS="--disable-float --disable-long-double --disable-quad-precision --disable-fortran"
+FLAGS="$FLAGS --enable-threads --enable-openmp"
