@@ -7,9 +7,29 @@
 
 # Extra codelets
 O00=""
-for ((i=1; i<=$O00_UP_TO; i++)); do
-	O00="$O00 o00_$i.c"
+O00_I=""
+O00_NO=""
+for ((i=2; i<=$O00_UP_TO; i++)); do
+	SUBOPTIMALS_FOUND=""
+	for SUBOPTIMAL_FACTOR in $SUBOPTIMAL_FACTORS; do
+		CHECK_NUMBER=$(($i + 1))  # check + 1 for DST (RODFT00 and friends)
+		# see http://www.fftw.org/fftw3_doc/Real_002dto_002dReal-Transforms.html
+		if (( $CHECK_NUMBER % $SUBOPTIMAL_FACTOR == 0 )); then
+			SUBOPTIMALS_FOUND="$SUBOPTIMALS_FOUND&$SUBOPTIMAL_FACTOR"
+		fi
+	done
+	if [ -n "$SUBOPTIMALS_FOUND" ]; then
+		O00_NO="$O00_NO $i($CHECK_NUMBER$SUBOPTIMALS_FOUND)"
+	else
+		O00="$O00 o00_$i.c"
+		O00_I="$O00_I $i"
+	fi
 done
+echo "Not gotta build o00 codelets due to suboptimal factorization for sizes:"
+echo $O00_NO | fold -s
+echo "Gotta build o00 codelets for sizes:"
+echo $O00_I | fold -s
+
 
 pushd () {
 	command pushd "$@" > /dev/null
