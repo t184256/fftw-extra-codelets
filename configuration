@@ -24,5 +24,5 @@ SUBOPTIMAL_FACTORS="121 143 169  17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79
 
 # Compilation flags
 FLAGS="--disable-float --disable-long-double --disable-quad-precision --disable-fortran"
-FLAGS="$FLAGS --enable-threads --enable-openmp"
+FLAGS="$FLAGS --enable-shared --enable-threads --enable-openmp"
 FLAGS="$FLAGS --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-generic-simd128 --enable-generic-simd256"
