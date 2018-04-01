@@ -6,29 +6,54 @@
 . configuration
 
 # Extra codelets
+E00=""
+E00_NO=""
+for ((i=2; i<=$E00_UP_TO; i++)); do
+	SUBOPTIMALS_FOUND=""
+	if (( i > E00_FORCED_UP_TO )); then
+		for SUBOPTIMAL_FACTOR in $SUBOPTIMAL_FACTORS; do
+			CHECK_NUMBER=$(($i - 1))  # check - 1 for DCT (REDFT00 and friends)
+			# see http://www.fftw.org/fftw3_doc/Real_002dto_002dReal-Transforms.html
+			if (( $CHECK_NUMBER % $SUBOPTIMAL_FACTOR == 0 )); then
+				SUBOPTIMALS_FOUND="$SUBOPTIMALS_FOUND&$SUBOPTIMAL_FACTOR"
+			fi
+		done
+	fi
+	if [ -n "$SUBOPTIMALS_FOUND" ]; then
+		E00_NO="$E00_NO $i($CHECK_NUMBER$SUBOPTIMALS_FOUND)"
+	else
+		E00="$E00 e00_$i.c"
+	fi
+done
+echo "Not gotta build e00 codelets due to suboptimal factorization for sizes:"
+echo $E00_NO | fold -s
+echo "Gotta build the following e00 codelets:"
+echo $E00 | fold -s
+
+
 O00=""
-O00_I=""
 O00_NO=""
 for ((i=2; i<=$O00_UP_TO; i++)); do
 	SUBOPTIMALS_FOUND=""
-	for SUBOPTIMAL_FACTOR in $SUBOPTIMAL_FACTORS; do
-		CHECK_NUMBER=$(($i + 1))  # check + 1 for DST (RODFT00 and friends)
-		# see http://www.fftw.org/fftw3_doc/Real_002dto_002dReal-Transforms.html
-		if (( $CHECK_NUMBER % $SUBOPTIMAL_FACTOR == 0 )); then
-			SUBOPTIMALS_FOUND="$SUBOPTIMALS_FOUND&$SUBOPTIMAL_FACTOR"
-		fi
-	done
+	if (( i > O00_FORCED_UP_TO )); then
+		for SUBOPTIMAL_FACTOR in $SUBOPTIMAL_FACTORS; do
+			CHECK_NUMBER=$(($i + 1))  # check + 1 for DST (RODFT00 and friends)
+			# see http://www.fftw.org/fftw3_doc/Real_002dto_002dReal-Transforms.html
+			if (( $CHECK_NUMBER % $SUBOPTIMAL_FACTOR == 0 )); then
+				SUBOPTIMALS_FOUND="$SUBOPTIMALS_FOUND&$SUBOPTIMAL_FACTOR"
+			fi
+		done
+	fi
 	if [ -n "$SUBOPTIMALS_FOUND" ]; then
 		O00_NO="$O00_NO $i($CHECK_NUMBER$SUBOPTIMALS_FOUND)"
 	else
 		O00="$O00 o00_$i.c"
-		O00_I="$O00_I $i"
 	fi
 done
 echo "Not gotta build o00 codelets due to suboptimal factorization for sizes:"
 echo $O00_NO | fold -s
-echo "Gotta build o00 codelets for sizes:"
-echo $O00_I | fold -s
+echo "Gotta build the following o00 codelets:"
+echo $O00 | fold -s
 
 
 pushd () {
@@ -52,6 +77,7 @@ PREFIX=$(realpath install)
 FFTWDIR=$(pwd)
 
 sed -i "s^O00 = .*^O00=$O00^" rdft/scalar/r2r/Makefile.am
+sed -i "s^E00 = .*^E00=$E00^" rdft/scalar/r2r/Makefile.am
 
 echo Configuring...
 ./bootstrap.sh "$FLAGS" --prefix="$PREFIX" >/dev/null 2>/dev/null
@@ -67,21 +93,20 @@ make -s -j4 -C genfft >/dev/null 2>/dev/null
 function pack_codelets {
 	pushd $FFTWDIR
 	tar -cjf ../../extra_codelets.tbz \
-		rdft/scalar/r2r/codlist.c \
-		rdft/scalar/r2r/o00_*.c
+		$(ls rdft/scalar/r2r/e00_*.c rdft/scalar/r2r/o00_*.c)
 	popd
 }
 
 echo Building r2r codelets...
 pushd rdft/scalar/r2r
-for FILE in $O00; do
+for FILE in $E00 $O00; do
 	if [ -r $FILE ]; then
 		echo not rebuilding $FILE
 	else
 		T_DATE=$(date -Iseconds)
 		echo -ne "$T_DATE building $FILE... "
 		T_START=$(date +%s%N)
-		make -s $FILE 2>/dev/null >/dev/null
+		make $FILE 2>/dev/null >/dev/null
 		T_END=$(date +%s%N)
 		T_SEC=$((($T_END - $T_START) / 1000000000))
 		T_MSEC=$((($T_END - $T_START) / 1000000 - $T_SEC * 1000))
@@ -108,8 +133,6 @@ echo Packing up the whole source tree...
 mv $FFTW $FFTW-with-extra-codelets
 tar czf ../$FFTW-with-extra-codelets.tar.gz $FFTW-with-extra-codelets
 popd
-#echo Cleaning up...
-#rm -rf ./tmp_building_extra_codelets
+echo Cleaning up...
+rm -rf ./tmp_building_extra_codelets
 echo Done
-
-#tar tf extra_codelets.tbz
