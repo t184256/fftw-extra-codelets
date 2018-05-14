@@ -2,10 +2,10 @@
 FFTW=fftw-3.3.7
 
 # Extra codelets
-E00_UP_TO=513
-E00_FORCED_UP_TO=129
-O00_UP_TO=511
-O00_FORCED_UP_TO=127
+E00_UP_TO=250
+E00_FORCED_UP_TO=151
+O00_UP_TO=248  # 249 took >180 hours
+O00_FORCED_UP_TO=149
 # FFTW is best at handling sizes of the form 2^a 3^b 5^c 7^d 11^e 13^f,
 # where e+f = 1 or 0. That means that factors of 2, 3, 5 and 7 are OK,
 # 11 and 13 are OK too, but if something is divisible by 11^2, 13^2, 11^13
